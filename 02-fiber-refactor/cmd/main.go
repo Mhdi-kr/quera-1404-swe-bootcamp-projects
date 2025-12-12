@@ -23,6 +23,8 @@ func main() {
 
 	userRepo := repository.NewUserRepository()
 	authSrv := service.NewAuthorizationService(jwtSecret, userRepo)
-	ctrl := controller.NewController(authSrv)
+	userSrv := service.NewUserService(userRepo, authSrv)
+	ctrl := controller.NewController(authSrv, userSrv)
+
 	ctrl.ListenAndServe(":8080")
 }

@@ -14,6 +14,15 @@ func (ctrl Controller) HandleRegister(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	// call service
+	err = ctrl.userSrv.Register(req.Email, req.Password)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	response = dto.Response{
+		Message: "ok",
+		Error:   nil,
+	}
+
 	return c.JSON(response)
 }

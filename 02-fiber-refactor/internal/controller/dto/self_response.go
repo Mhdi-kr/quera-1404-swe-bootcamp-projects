@@ -1,6 +1,6 @@
 package dto
 
 type SelfResponse struct {
-	Details UserDetails `json:"details"`
-	Status  string      `json:"status"`
+	User   User   `json:"user"`
+	Status string `json:"status"`
 }
