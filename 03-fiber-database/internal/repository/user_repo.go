@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"example.com/authorization/internal/repository/entity"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type UserRepository struct {
@@ -13,11 +12,6 @@ type UserRepository struct {
 
 func NewUserRepository() UserRepository {
 	ur := UserRepository{}
-
-	hash1, _ := bcrypt.GenerateFromPassword([]byte("1234"), 4)
-	hash2, _ := bcrypt.GenerateFromPassword([]byte("1234"), 4)
-	ur.Insert("mehdi", string(hash1))
-	ur.Insert("amir", string(hash2))
 
 	return ur
 }
