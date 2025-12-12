@@ -1,9 +1,20 @@
 package entity
 
+import (
+	"database/sql"
+)
+
 type User struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
+	Id        int64          `db:"id"`
+	Username  string         `db:"username"`
+	Password  string         `db:"password"`
+	Email     string         `db:"email"`
+	FullName  sql.NullString `db:"full_name"`
+	CreatedAt sql.NullTime   `db:"created_at"`
+	UpdatedAt sql.NullTime   `db:"updated_at"`
 }
+
+type Users []User
 
 func (u *User) IsEmpty() bool {
 	return len(u.Password) > 0 && len(u.Username) > 0

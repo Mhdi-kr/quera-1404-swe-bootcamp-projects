@@ -12,6 +12,7 @@ import (
 	"example.com/authorization/internal/repository/entity"
 	"example.com/authorization/internal/service"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
@@ -27,23 +28,24 @@ func main() {
 	}
 
 	// demo how we are going to use sql package and why it gets difficult to work with
-	db, err := sql.Open("mysql", "root:example@tcp(localhost:3306)/quera-bootcamp")
+	db, err := sql.Open("mysql", "root:example@tcp(localhost:3306)/quera-bootcamp?parseTime=true")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	res, err := db.QueryContext(context.Background(), "select username as Username, password as Passwrod from user;")
+	dbx := sqlx.NewDb(db, "mysql")
+	rows, err := dbx.QueryxContext(context.Background(), "select * from user where id = ?;", 1)
 
-	fmt.Println(res)
-
-	var users []entity.User
-
-	for res.Next() {
-		var u entity.User
-		res.Scan(&u.Username, &u.Password)
-		users = append(users, u)
+	fmt.Println(rows)
+	var users entity.Users
+	for rows.Next() {
+		var usr entity.User
+		err := rows.StructScan(&usr)
+		if err != nil {
+			fmt.Println(err)
+		}
+		users = append(users, usr)
 	}
-
 	fmt.Println(users)
 
 	userRepo := repository.NewUserRepository()
