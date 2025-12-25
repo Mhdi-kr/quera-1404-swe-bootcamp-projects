@@ -17,7 +17,7 @@ func (ctrl Controller) HandleLogin(c fiber.Ctx) error {
 		c.SendStatus(fiber.StatusBadRequest)
 	}
 
-	token, err := ctrl.userSrv.Login(request.Username, request.Password)
+	token, err := ctrl.userSrv.Login(c.Context(), request.Username, request.Password)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
 			return c.SendStatus(fiber.StatusNotFound)

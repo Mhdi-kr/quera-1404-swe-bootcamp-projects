@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"example.com/authorization/internal/domain"
@@ -20,8 +21,8 @@ func NewUserService(userRepo repository.UserRepository, authSrv AuthService) Use
 	}
 }
 
-func (us UserService) GetUserByID(username string) (domain.User, error) {
-	eu, err := us.userRepo.GetOneByID(username)
+func (us UserService) GetUserByID(ctx context.Context, username string) (domain.User, error) {
+	eu, err := us.userRepo.GetOneByUsername(ctx, username)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -30,8 +31,8 @@ func (us UserService) GetUserByID(username string) (domain.User, error) {
 }
 
 // REFACTOR:
-func (us UserService) Login(username string, password string) (TokenString, error) {
-	user, err := us.userRepo.GetOneByID(username)
+func (us UserService) Login(ctx context.Context, username string, password string) (TokenString, error) {
+	user, err := us.userRepo.GetOneByUsername(ctx, username)
 	if err != nil {
 		if errors.Is(err, repository.ErrUserNotFound) {
 			return "", errors.Join(repository.ErrUserNotFound, ErrUserNotFound)
@@ -48,13 +49,13 @@ func (us UserService) Login(username string, password string) (TokenString, erro
 	return us.authSrv.GenerateToken(user.Username)
 }
 
-func (us UserService) Register(username string, password string) error {
-	user, err := us.userRepo.GetOneByID(username)
-	if err != nil && err != repository.ErrUserNotFound {
+func (us UserService) Register(ctx context.Context, username string, password string) error {
+	user, err := us.userRepo.GetOneByUsername(ctx, username)
+	if err != nil && !errors.Is(repository.ErrUserNotFound, err) {
 		return err
 	}
 
-	if !user.IsEmpty() {
+	if user.IsValid() {
 		return ErrUserAlreadyRegistered
 	}
 
@@ -63,11 +64,11 @@ func (us UserService) Register(username string, password string) error {
 		return err
 	}
 
-	return us.authSrv.userRepo.Insert(username, string(hashedPasswordBytes))
+	return us.authSrv.userRepo.Insert(ctx, username, string(hashedPasswordBytes))
 }
 
-func (us UserService) List() ([]domain.User, error) {
-	eusers, err := us.userRepo.ListAll()
+func (us UserService) List(ctx context.Context) ([]domain.User, error) {
+	eusers, err := us.userRepo.ListAll(ctx)
 	if err != nil {
 		return []domain.User{}, err
 	}

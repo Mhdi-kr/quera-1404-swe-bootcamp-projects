@@ -16,6 +16,6 @@ type User struct {
 
 type Users []User
 
-func (u *User) IsEmpty() bool {
+func (u *User) IsValid() bool {
 	return len(u.Password) > 0 && len(u.Username) > 0
 }

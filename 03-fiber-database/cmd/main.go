@@ -1,18 +1,14 @@
 package main
 
 import (
-	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"os"
 
 	"example.com/authorization/internal/controller"
 	"example.com/authorization/internal/repository"
-	"example.com/authorization/internal/repository/entity"
 	"example.com/authorization/internal/service"
+	"example.com/authorization/pkg"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 )
 
@@ -22,33 +18,21 @@ func main() {
 		log.Fatal("cannot read .env from file system")
 	}
 
+	dbConnectionUri := os.Getenv("MYSQL_CONNECTION_URI")
+	if len(dbConnectionUri) == 0 {
+		log.Fatal("connectionUri cannot be empty")
+	}
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if len(jwtSecret) == 0 {
 		log.Fatal("jwt secret cannot be empty")
 	}
 
-	// demo how we are going to use sql package and why it gets difficult to work with
-	db, err := sql.Open("mysql", "root:example@tcp(localhost:3306)/quera-bootcamp?parseTime=true")
+	sqldb, err := pkg.NewSQLRepository(dbConnectionUri)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("database conenction failed")
 	}
-
-	dbx := sqlx.NewDb(db, "mysql")
-	rows, err := dbx.QueryxContext(context.Background(), "select * from user where id = ?;", 1)
-
-	fmt.Println(rows)
-	var users entity.Users
-	for rows.Next() {
-		var usr entity.User
-		err := rows.StructScan(&usr)
-		if err != nil {
-			fmt.Println(err)
-		}
-		users = append(users, usr)
-	}
-	fmt.Println(users)
-
-	userRepo := repository.NewUserRepository()
+	userRepo := repository.NewUserRepository(sqldb)
 	authSrv := service.NewAuthorizationService(jwtSecret, userRepo)
 	userSrv := service.NewUserService(userRepo, authSrv)
 	ctrl := controller.NewController(authSrv, userSrv)

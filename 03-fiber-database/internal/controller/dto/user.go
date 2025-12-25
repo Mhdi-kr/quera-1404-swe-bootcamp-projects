@@ -12,5 +12,6 @@ type User struct {
 func NewUserFromDomain(du domain.User) User {
 	return User{
 		Username: du.Username,
+		Email:    du.Email,
 	}
 }

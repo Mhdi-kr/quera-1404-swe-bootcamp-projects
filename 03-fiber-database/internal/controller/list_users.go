@@ -8,7 +8,7 @@ import (
 func (ctrl Controller) HandleListUsers(c fiber.Ctx) error {
 	var response dto.ListUsersResponse
 
-	dusers, err := ctrl.userSrv.List()
+	dusers, err := ctrl.userSrv.List(c.Context())
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}

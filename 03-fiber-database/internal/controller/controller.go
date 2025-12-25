@@ -36,10 +36,13 @@ func NewController(authSrv service.AuthService, userSrv service.UserService) Con
 		return c.Next()
 	})
 
-	v1Authorized := api.Group("/v1", func(c fiber.Ctx) error {
-		c.Set("Version", "v1")
+	v1profileAuthorized := v1.Group("/profile", func(c fiber.Ctx) error {
 		headers := c.GetReqHeaders()
 		authTokens, ok := headers["Authorization"]
+		if len(authTokens) == 0 {
+			return c.SendStatus(fiber.StatusForbidden)
+		}
+
 		jwtToken := authTokens[0]
 		if !ok || len(jwtToken) == 0 {
 			return c.SendStatus(fiber.StatusForbidden)
@@ -67,8 +70,8 @@ func NewController(authSrv service.AuthService, userSrv service.UserService) Con
 	v1.Post("/login", ctrl.HandleLogin)
 	v1.Get("/users/", ctrl.HandleListUsers)
 
-	v1Authorized.Get("/profile/self", ctrl.HandleSelf)
-	v1Authorized.Get("/profile/posts", ctrl.HandleProfilePosts)
+	v1profileAuthorized.Get("/self", ctrl.HandleSelf)
+	v1profileAuthorized.Get("/posts", ctrl.HandleProfilePosts)
 
 	return ctrl
 }

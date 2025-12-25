@@ -14,7 +14,7 @@ func (ctrl Controller) HandleSelf(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 
-	user, err := ctrl.userSrv.GetUserByID(userID)
+	user, err := ctrl.userSrv.GetUserByID(c.Context(), userID)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
