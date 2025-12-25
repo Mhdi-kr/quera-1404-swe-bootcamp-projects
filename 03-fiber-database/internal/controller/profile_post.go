@@ -10,10 +10,41 @@ import (
 )
 
 func (ctrl Controller) HandleListProfilePosts(c fiber.Ctx) error {
-	var response dto.ProfilePostResponse
+	var req dto.ListPostsRequest
+	var response dto.ListPostsResponse
 
-	// TODO: call service
-	return c.Status(fiber.StatusOK).JSON(response)
+	err := c.Bind().Query(&req)
+	if err != nil {
+		c.SendStatus(fiber.StatusBadRequest)
+	}
+
+	req.Sanitize()
+
+	userID, ok := c.Context().Value(constants.UsrIDContextKey).(int64)
+	if !ok {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	dps, err := ctrl.postSrv.ListProfilePosts(c.Context(), userID, domain.PostFilters{
+		Page: req.Page,
+		Size: req.Size,
+	})
+
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	for _, dp := range dps {
+		response.Posts = append(response.Posts, dto.Post{
+			Id:          int(dp.Id),
+			CreatedAt:   dp.CreatedAt,
+			UpdatedAt:   &dp.UpdatedAt,
+			URL:         dp.URL,
+			Description: dp.Description,
+		})
+	}
+
+	return c.JSON(response)
 }
 
 func (ctrl Controller) HandleCreateProfilePost(c fiber.Ctx) error {
@@ -29,7 +60,7 @@ func (ctrl Controller) HandleCreateProfilePost(c fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
 
-	postID, err := ctrl.postSrv.Create(c.Context(), domain.Post{
+	postID, err := ctrl.postSrv.CreateProfilePost(c.Context(), domain.Post{
 		Description: request.Description,
 		URL:         request.URL,
 		UserID:      userID,

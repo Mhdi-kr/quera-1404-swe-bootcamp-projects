@@ -5,6 +5,7 @@ import (
 
 	"example.com/authorization/internal/repository/entity"
 	"example.com/authorization/pkg"
+	"github.com/Masterminds/squirrel"
 )
 
 type PostRepository struct {
@@ -26,4 +27,33 @@ func (ur *PostRepository) Insert(ctx context.Context, post entity.Post) (int64, 
 	}
 
 	return res.LastInsertId()
+}
+
+func (ur *PostRepository) List(ctx context.Context, userID *int64, size uint64, page uint64) ([]entity.Post, error) {
+	var posts []entity.Post
+
+	query := squirrel.Select("*").From("post").Limit(size).Offset((page - 1) * size)
+
+	if userID != nil {
+		query = query.Where("user_id = ?", *userID)
+	}
+
+	sql, args, err := query.ToSql()
+
+	rows, err := ur.sqlRepo.DB.QueryxContext(ctx, sql, args...)
+	if err != nil {
+		return posts, err
+	}
+
+	for rows.Next() {
+		var post entity.Post
+		err := rows.StructScan(&post)
+		if err != nil {
+			return posts, err
+		}
+
+		posts = append(posts, post)
+	}
+
+	return posts, nil
 }

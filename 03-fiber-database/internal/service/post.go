@@ -26,10 +26,20 @@ func (us PostService) CreateProfilePost(ctx context.Context, post domain.Post) (
 	})
 }
 
-func (us PostService) ListProfilePosts(ctx context.Context, post domain.Post) (int64, error) {
-	return us.postRepo.Insert(ctx, entity.Post{
-		Description: post.Description,
-		URL:         post.URL,
-		UserID:      post.UserID,
-	})
+func (us PostService) ListProfilePosts(ctx context.Context, userID int64, filters domain.PostFilters) ([]domain.Post, error) {
+	ps, err := us.postRepo.List(ctx, &userID, filters.Size, filters.Page)
+	if err != nil {
+		return make([]domain.Post, 0), err
+	}
+
+	return domain.NewPostsFromEntities(ps), nil
+}
+
+func (us PostService) ListPosts(ctx context.Context, filters domain.PostFilters) ([]domain.Post, error) {
+	ps, err := us.postRepo.List(ctx, nil, filters.Size, filters.Page)
+	if err != nil {
+		return make([]domain.Post, 0), err
+	}
+
+	return domain.NewPostsFromEntities(ps), nil
 }
