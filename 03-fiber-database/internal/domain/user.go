@@ -10,6 +10,6 @@ type User struct {
 func NewUserFromEntity(eu entity.User) User {
 	return User{
 		Username: eu.Username,
-		Email:    eu.Email,
+		Email:    eu.Email.String,
 	}
 }

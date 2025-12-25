@@ -21,8 +21,11 @@ func NewUserRepository(sqlRepo pkg.SQLRepository) UserRepository {
 }
 
 func (ur *UserRepository) Insert(ctx context.Context, username string, hashedPassword string) error {
+	// THIS IS DANGEROUS
 	query := fmt.Sprintf("insert into `user` (`password`, `username`) values ('%s', '%s')", hashedPassword, username)
 	_, err := ur.sqlRepo.DB.ExecContext(ctx, query)
+
+	// ("select * from user where user_id = ?", 2)
 
 	return err
 }
@@ -31,6 +34,21 @@ func (ur *UserRepository) GetOneByUsername(ctx context.Context, username string)
 	var users []entity.User
 
 	err := ur.sqlRepo.DB.SelectContext(ctx, &users, "select * from user where username = ?", username)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	if len(users) == 0 {
+		return entity.User{}, ErrUserNotFound
+	}
+
+	return users[0], nil
+}
+
+func (ur *UserRepository) GetOneByID(ctx context.Context, userID int64) (entity.User, error) {
+	var users []entity.User
+
+	err := ur.sqlRepo.DB.SelectContext(ctx, &users, "select * from user where id = ?", userID)
 	if err != nil {
 		return entity.User{}, err
 	}

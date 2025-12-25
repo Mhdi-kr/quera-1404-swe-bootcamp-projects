@@ -9,7 +9,7 @@ import (
 func (ctrl Controller) HandleSelf(c fiber.Ctx) error {
 	var response dto.SelfResponse
 
-	userID, ok := c.Context().Value(constants.UsrIDContextKey).(string)
+	userID, ok := c.Context().Value(constants.UsrIDContextKey).(int64)
 	if !ok {
 		return c.SendStatus(fiber.StatusForbidden)
 	}

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"example.com/authorization/internal/repository/entity"
 	"example.com/authorization/pkg"
@@ -20,40 +19,11 @@ func NewPostRepository(sqlRepo pkg.SQLRepository) PostRepository {
 	}
 }
 
-func (ur *PostRepository) Insert(username string, hashedPassword string) error {
-	ur.Users = append(ur.Users, entity.User{
-		Username: username,
-		Password: hashedPassword,
-	})
-
-	return nil
-}
-
-func (ur *PostRepository) GetOneByUsername(username string) (entity.User, error) {
-	for _, u := range ur.Users {
-		if u.Username == username {
-			return u, nil
-		}
-	}
-
-	return entity.User{}, ErrUserNotFound
-}
-
-func (ur *PostRepository) ListAll(ctx context.Context) ([]entity.User, error) {
-	rows, err := ur.sqlRepo.DB.QueryxContext(ctx, "select * from user")
+func (ur *PostRepository) Insert(ctx context.Context, post entity.Post) (int64, error) {
+	res, err := ur.sqlRepo.DB.ExecContext(ctx, "insert into `post` (`description`, `url`, `user_id`, `vote_count`) values (?, ?, ?, 0)", post.Description, post.URL, post.UserID)
 	if err != nil {
-		return make([]entity.User, 0), err
+		return 0, err
 	}
 
-	var users entity.Users
-	for rows.Next() {
-		var usr entity.User
-		err := rows.StructScan(&usr)
-		if err != nil {
-			fmt.Println(err)
-		}
-		users = append(users, usr)
-	}
-
-	return users, nil
+	return res.LastInsertId()
 }

@@ -21,8 +21,17 @@ func NewUserService(userRepo repository.UserRepository, authSrv AuthService) Use
 	}
 }
 
-func (us UserService) GetUserByID(ctx context.Context, username string) (domain.User, error) {
+func (us UserService) GetUserByUsername(ctx context.Context, username string) (domain.User, error) {
 	eu, err := us.userRepo.GetOneByUsername(ctx, username)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	return domain.NewUserFromEntity(eu), nil
+}
+
+func (us UserService) GetUserByID(ctx context.Context, UserID int64) (domain.User, error) {
+	eu, err := us.userRepo.GetOneByID(ctx, UserID)
 	if err != nil {
 		return domain.User{}, err
 	}
@@ -46,7 +55,7 @@ func (us UserService) Login(ctx context.Context, username string, password strin
 		return "", errors.Join(ErrWrongCredentials, cerr)
 	}
 
-	return us.authSrv.GenerateToken(user.Username)
+	return us.authSrv.GenerateToken(user.Id)
 }
 
 func (us UserService) Register(ctx context.Context, username string, password string) error {

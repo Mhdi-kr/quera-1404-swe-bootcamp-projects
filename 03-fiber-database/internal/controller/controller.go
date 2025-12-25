@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"strconv"
 
 	"example.com/authorization/internal/constants"
 	"example.com/authorization/internal/service"
@@ -12,19 +13,21 @@ type Controller struct {
 	app     *fiber.App
 	authSrv service.AuthService
 	userSrv service.UserService
+	postSrv service.PostService
 }
 
 func (ctrl Controller) ListenAndServe(addr string) {
 	ctrl.app.Listen(addr)
 }
 
-func NewController(authSrv service.AuthService, userSrv service.UserService) Controller {
+func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService) Controller {
 	app := fiber.New()
 
 	ctrl := Controller{
 		app:     app,
 		authSrv: authSrv,
 		userSrv: userSrv,
+		postSrv: postSrv,
 	}
 
 	api := ctrl.app.Group("/api", func(c fiber.Ctx) error {
@@ -53,10 +56,12 @@ func NewController(authSrv service.AuthService, userSrv service.UserService) Con
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
 
-		userID, err := token.Claims.GetSubject()
+		userIDStr, err := token.Claims.GetSubject()
 		if err != nil {
 			return c.SendStatus(fiber.StatusInternalServerError)
 		}
+
+		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
 
 		contextWithUserID := context.WithValue(c.Context(), constants.UsrIDContextKey, userID)
 
@@ -70,8 +75,14 @@ func NewController(authSrv service.AuthService, userSrv service.UserService) Con
 	v1.Post("/login", ctrl.HandleLogin)
 	v1.Get("/users/", ctrl.HandleListUsers)
 
+	v1posts := v1.Group("/posts")
+
+	v1posts.Get("/", ctrl.HandleGetAllPosts)
+
 	v1profileAuthorized.Get("/self", ctrl.HandleSelf)
-	v1profileAuthorized.Get("/posts", ctrl.HandleProfilePosts)
+
+	v1profileAuthorized.Get("/posts", ctrl.HandleListProfilePosts)
+	v1profileAuthorized.Post("/posts", ctrl.HandleCreateProfilePost)
 
 	return ctrl
 }

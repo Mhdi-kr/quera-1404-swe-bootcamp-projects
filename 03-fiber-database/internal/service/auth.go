@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"example.com/authorization/internal/repository"
@@ -27,14 +28,15 @@ func NewAuthorizationService(jwtSecret string, userRepo repository.UserRepositor
 	}
 }
 
-func (as AuthService) GenerateToken(userId string) (TokenString, error) {
+func (as AuthService) GenerateToken(userId int64) (TokenString, error) {
+	userIdStr := strconv.FormatInt(userId, 10)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		// A usual scenario is to set the expiration time relative to the current time
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		Issuer:    "test",
-		Subject:   userId,
+		Subject:   userIdStr,
 		ID:        "0",
 		Audience:  []string{},
 	})

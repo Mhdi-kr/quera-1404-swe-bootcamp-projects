@@ -32,10 +32,12 @@ func main() {
 	if err != nil {
 		log.Fatal("database conenction failed")
 	}
+	postRepo := repository.NewPostRepository(sqldb)
 	userRepo := repository.NewUserRepository(sqldb)
 	authSrv := service.NewAuthorizationService(jwtSecret, userRepo)
 	userSrv := service.NewUserService(userRepo, authSrv)
-	ctrl := controller.NewController(authSrv, userSrv)
+	postSrv := service.NewPostService(postRepo)
+	ctrl := controller.NewController(authSrv, userSrv, postSrv)
 
 	ctrl.ListenAndServe(":8080")
 }
