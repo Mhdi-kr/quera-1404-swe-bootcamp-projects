@@ -14,7 +14,7 @@ func (ctrl Controller) HandleListUsers(c fiber.Ctx) error {
 	}
 
 	for _, du := range dusers {
-		response.Users = append(response.Users, dto.NewUserFromDomain(du))
+		response.Users = append(response.Users, du.ToDTO())
 	}
 
 	return c.JSON(response)

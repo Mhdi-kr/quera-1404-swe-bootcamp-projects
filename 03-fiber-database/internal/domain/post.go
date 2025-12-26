@@ -1,8 +1,10 @@
 package domain
 
 import (
+	"database/sql"
 	"time"
 
+	"example.com/authorization/internal/controller/dto"
 	"example.com/authorization/internal/repository/entity"
 )
 
@@ -19,6 +21,28 @@ type Post struct {
 	VoteCount   uint64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+func (p *Post) ToEntity() entity.Post {
+	return entity.Post{
+		Id:          p.Id,
+		Description: p.Description,
+		URL:         p.URL,
+		UserID:      p.UserID,
+		VoteCount:   p.VoteCount,
+		CreatedAt:   sql.NullTime{Time: p.CreatedAt, Valid: true},
+		UpdatedAt:   sql.NullTime{Time: p.UpdatedAt, Valid: true},
+	}
+}
+
+func (p *Post) ToDTO() dto.Post {
+	return dto.Post{
+		Id:          int(p.Id),
+		CreatedAt:   p.CreatedAt,
+		UpdatedAt:   &p.UpdatedAt,
+		URL:         p.URL,
+		Description: p.Description,
+	}
 }
 
 func NewPostFromEntity(p entity.Post) Post {

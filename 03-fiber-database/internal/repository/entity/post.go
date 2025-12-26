@@ -13,16 +13,3 @@ type Post struct {
 	CreatedAt   sql.NullTime `db:"created_at"`
 	UpdatedAt   sql.NullTime `db:"updated_at"`
 }
-
-// REFACTOR: this
-// func (dp *Post) ToDomain() domain.Post {
-// 	return domain.Post{
-// 		Id:        dp.Id,
-// 		Title:     dp.Title,
-// 		URL:       dp.URL,
-// 		UserID:    dp.UserID,
-// 		VoteCount: dp.VoteCount,
-// 		CreatedAt: dp.CreatedAt.Time,
-// 		UpdatedAt: dp.UpdatedAt.Time,
-// 	}
-// }

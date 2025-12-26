@@ -20,7 +20,7 @@ func (ctrl Controller) HandleSelf(c fiber.Ctx) error {
 	}
 
 	response = dto.SelfResponse{
-		User:   dto.NewUserFromDomain(user),
+		User:   user.ToDTO(),
 		Status: "ok",
 	}
 	// TODO: call service

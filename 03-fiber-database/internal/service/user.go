@@ -39,7 +39,6 @@ func (us UserService) GetUserByID(ctx context.Context, UserID int64) (domain.Use
 	return domain.NewUserFromEntity(eu), nil
 }
 
-// REFACTOR:
 func (us UserService) Login(ctx context.Context, username string, password string) (TokenString, error) {
 	user, err := us.userRepo.GetOneByUsername(ctx, username)
 	if err != nil {
