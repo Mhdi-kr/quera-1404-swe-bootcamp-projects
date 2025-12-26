@@ -57,3 +57,34 @@ func (ur *PostRepository) List(ctx context.Context, userID *int64, size uint64, 
 
 	return posts, nil
 }
+
+func (ur *PostRepository) DeleteByID(ctx context.Context, userID int64, postID int64) error {
+	query := squirrel.Delete("post").Where(squirrel.And{
+		squirrel.Eq{
+			"id": postID,
+		},
+		squirrel.Eq{
+			"user_id": userID,
+		},
+	})
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return err
+	}
+
+	result, err := ur.sqlRepo.DB.ExecContext(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return ErrPostNotFound
+	}
+
+	return nil
+}

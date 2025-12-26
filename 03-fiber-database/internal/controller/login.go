@@ -30,7 +30,7 @@ func (ctrl Controller) HandleLogin(c fiber.Ctx) error {
 		Token: string(token),
 		Response: dto.Response{
 			Message: "ok",
-			Error:   nil,
+			Error:   "",
 		},
 	}
 

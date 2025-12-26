@@ -20,6 +20,46 @@ func (ctrl Controller) ListenAndServe(addr string) {
 	ctrl.app.Listen(addr)
 }
 
+// seperation of concerns using this method
+func (ctrl Controller) excludedPostsAuthorizationHandler(c fiber.Ctx) error {
+	if c.Route().Path == "/api/v1/posts" && c.Method() == "GET" {
+		return c.Next()
+	}
+
+	return ctrl.authorizationHandler(c)
+}
+
+func (ctrl Controller) authorizationHandler(c fiber.Ctx) error {
+	headers := c.GetReqHeaders()
+	authTokens, ok := headers["Authorization"]
+	if len(authTokens) == 0 {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	jwtToken := authTokens[0]
+	if !ok || len(jwtToken) == 0 {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	token, err := ctrl.authSrv.ValidateToken(jwtToken)
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	userIDStr, err := token.Claims.GetSubject()
+	if err != nil {
+		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+
+	userID, _ := strconv.ParseInt(userIDStr, 10, 64)
+
+	contextWithUserID := context.WithValue(c.Context(), constants.UsrIDContextKey, userID)
+
+	c.SetContext(contextWithUserID)
+
+	return c.Next()
+}
+
 func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService) Controller {
 	app := fiber.New()
 
@@ -39,45 +79,29 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 		return c.Next()
 	})
 
-	v1profileAuthorized := v1.Group("/profile", func(c fiber.Ctx) error {
-		headers := c.GetReqHeaders()
-		authTokens, ok := headers["Authorization"]
-		if len(authTokens) == 0 {
-			return c.SendStatus(fiber.StatusForbidden)
-		}
+	// POST api/v1/posts/:postId/comments/ # create comments
+	// POST api/v1/posts/:postId/comments/:commentId/upvote # upvote comment
+	// DELETE api/v1/posts/:postId/comments/:commentId
+	// DELETE /api/v1/posts/:postId
 
-		jwtToken := authTokens[0]
-		if !ok || len(jwtToken) == 0 {
-			return c.SendStatus(fiber.StatusForbidden)
-		}
-
-		token, err := authSrv.ValidateToken(jwtToken)
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-
-		userIDStr, err := token.Claims.GetSubject()
-		if err != nil {
-			return c.SendStatus(fiber.StatusInternalServerError)
-		}
-
-		userID, _ := strconv.ParseInt(userIDStr, 10, 64)
-
-		contextWithUserID := context.WithValue(c.Context(), constants.UsrIDContextKey, userID)
-
-		c.SetContext(contextWithUserID)
-
-		return c.Next()
-	})
+	v1profileAuthorized := v1.Group("/profile", ctrl.authorizationHandler)
 
 	ctrl.app.Get("/", ctrl.HandleHello)
 	v1.Post("/register", ctrl.HandleRegister)
 	v1.Post("/login", ctrl.HandleLogin)
 	v1.Get("/users/", ctrl.HandleListUsers)
 
-	v1posts := v1.Group("/posts")
+	v1posts := v1.Group("/posts", ctrl.excludedPostsAuthorizationHandler)
 
+	v1posts.Post("/:postId/comments", ctrl.HandleCreateComment)
+	v1posts.Post("/:postId/comments/:commentId/upvote", ctrl.HandleUpvoteComment)
+	v1posts.Delete("/:postId/comments/:commentId", ctrl.HandleDeleteComment)
+	v1posts.Delete("/:postId", ctrl.HandleDeletePost)
+
+	// TODO: fetch comments for each post when returning them
 	v1posts.Get("/", ctrl.HandleGetAllPosts)
+
+	// GET /posts/:postId
 
 	v1profileAuthorized.Get("/self", ctrl.HandleSelf)
 

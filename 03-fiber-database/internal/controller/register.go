@@ -21,7 +21,7 @@ func (ctrl Controller) HandleRegister(c fiber.Ctx) error {
 
 	response = dto.Response{
 		Message: "ok",
-		Error:   nil,
+		Error:   "",
 	}
 
 	return c.JSON(response)

@@ -43,3 +43,7 @@ func (us PostService) ListPosts(ctx context.Context, filters domain.PostFilters)
 
 	return domain.NewPostsFromEntities(ps), nil
 }
+
+func (us PostService) DeletePost(ctx context.Context, userID int64, postID int64) error {
+	return us.postRepo.DeleteByID(ctx, userID, postID)
+}
