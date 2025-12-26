@@ -57,8 +57,6 @@ func NewPostFromEntity(p entity.Post) Post {
 	}
 }
 
-type Posts []Post
-
 func NewPostsFromEntities(p []entity.Post) []Post {
 	var posts []Post
 	for _, pe := range p {

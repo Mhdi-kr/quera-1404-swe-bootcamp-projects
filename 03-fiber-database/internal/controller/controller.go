@@ -10,10 +10,11 @@ import (
 )
 
 type Controller struct {
-	app     *fiber.App
-	authSrv service.AuthService
-	userSrv service.UserService
-	postSrv service.PostService
+	app        *fiber.App
+	authSrv    service.AuthService
+	userSrv    service.UserService
+	postSrv    service.PostService
+	commentSrv service.CommentService
 }
 
 func (ctrl Controller) ListenAndServe(addr string) {
@@ -60,14 +61,15 @@ func (ctrl Controller) authorizationHandler(c fiber.Ctx) error {
 	return c.Next()
 }
 
-func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService) Controller {
+func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService, commentSrv service.CommentService) Controller {
 	app := fiber.New()
 
 	ctrl := Controller{
-		app:     app,
-		authSrv: authSrv,
-		userSrv: userSrv,
-		postSrv: postSrv,
+		app:        app,
+		authSrv:    authSrv,
+		userSrv:    userSrv,
+		postSrv:    postSrv,
+		commentSrv: commentSrv,
 	}
 
 	api := ctrl.app.Group("/api", func(c fiber.Ctx) error {
@@ -93,6 +95,7 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 
 	v1posts := v1.Group("/posts", ctrl.excludedPostsAuthorizationHandler)
 
+	v1posts.Get("/:postId/comments", ctrl.HandleListComments)
 	v1posts.Post("/:postId/comments", ctrl.HandleCreateComment)
 	v1posts.Post("/:postId/comments/:commentId/upvote", ctrl.HandleUpvoteComment)
 	v1posts.Delete("/:postId/comments/:commentId", ctrl.HandleDeleteComment)
