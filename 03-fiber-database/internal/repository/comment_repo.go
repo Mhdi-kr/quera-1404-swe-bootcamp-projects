@@ -49,10 +49,17 @@ func (ur *CommentRepo) Insert(ctx context.Context, comment entity.Comment) (int6
 
 func (ur *CommentRepo) List(ctx context.Context, postID int64, size uint64, page uint64) ([]entity.Comment, error) {
 	var comments []entity.Comment
-
-	sql, args, err := squirrel.Select("*").
+	sql, args, err := squirrel.Select(
+		"comment.id as id",
+		"count(user_comment_upvote.comment_id) as vote_count",
+		"comment.user_id",
+		"comment.post_id",
+		"comment.content",
+	).
 		From("comment").
 		Limit(size).
+		Join("user_comment_upvote on comment.id = user_comment_upvote.comment_id").
+		GroupBy("comment.id").
 		Offset((page-1)*size).
 		Where("post_id = ?", postID).
 		ToSql()

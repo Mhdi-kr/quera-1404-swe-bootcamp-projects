@@ -11,3 +11,8 @@ type Comment struct {
 	CreatedAt sql.NullTime `db:"created_at"`
 	UpdatedAt sql.NullTime `db:"updated_at"`
 }
+
+type CommentUpvotesAgg struct {
+	CommentId int64  `db:"commentId"`
+	Upvotes   uint64 `db:"upvotes"`
+}
