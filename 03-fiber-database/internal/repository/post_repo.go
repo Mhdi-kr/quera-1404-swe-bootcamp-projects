@@ -26,6 +26,8 @@ func (ur *PostRepository) Insert(ctx context.Context, post entity.Post) (int64, 
 		return 0, err
 	}
 
+	// we can add post to our search index here
+
 	return res.LastInsertId()
 }
 
