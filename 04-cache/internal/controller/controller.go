@@ -2,19 +2,24 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"time"
 
 	"example.com/authorization/internal/constants"
 	"example.com/authorization/internal/service"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
 type Controller struct {
-	app        *fiber.App
-	authSrv    service.AuthService
-	userSrv    service.UserService
-	postSrv    service.PostService
-	commentSrv service.CommentService
+	app          *fiber.App
+	authSrv      service.AuthService
+	userSrv      service.UserService
+	postSrv      service.PostService
+	commentSrv   service.CommentService
+	analyticsSrv service.AnalyticsService
 }
 
 func (ctrl Controller) ListenAndServe(addr string) {
@@ -61,16 +66,27 @@ func (ctrl Controller) authorizationHandler(c fiber.Ctx) error {
 	return c.Next()
 }
 
-func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService, commentSrv service.CommentService) Controller {
+func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService, commentSrv service.CommentService, analyticsSrv service.AnalyticsService) Controller {
 	app := fiber.New()
 
 	ctrl := Controller{
-		app:        app,
-		authSrv:    authSrv,
-		userSrv:    userSrv,
-		postSrv:    postSrv,
-		commentSrv: commentSrv,
+		app:          app,
+		authSrv:      authSrv,
+		userSrv:      userSrv,
+		postSrv:      postSrv,
+		commentSrv:   commentSrv,
+		analyticsSrv: analyticsSrv,
 	}
+
+	app.Use(logger.New(logger.Config{
+		Format: logger.JSONFormat,
+	}))
+
+	app.All("/*", func(c fiber.Ctx) error {
+		err := ctrl.analyticsSrv.RegisterIP(c.Context(), c.Host())
+		fmt.Println(err)
+		return c.Next()
+	})
 
 	api := ctrl.app.Group("/api", func(c fiber.Ctx) error {
 		return c.Next()
@@ -109,7 +125,22 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 	v1profileAuthorized.Get("/self", ctrl.HandleSelf)
 
 	v1profileAuthorized.Get("/posts", ctrl.HandleListProfilePosts)
-	v1profileAuthorized.Post("/posts", ctrl.HandleCreateProfilePost)
+	v1profileAuthorized.Post("/posts", limiter.New(limiter.Config{
+		Next: func(c fiber.Ctx) bool {
+			return c.IP() == "127.0.0.1"
+		},
+		Max: 20,
+		MaxFunc: func(c fiber.Ctx) int {
+			return 20
+		},
+		Expiration: 30 * time.Second,
+		KeyGenerator: func(c fiber.Ctx) string {
+			return c.Get("x-forwarded-for")
+		},
+		LimitReached: func(c fiber.Ctx) error {
+			return c.SendStatus(fiber.StatusTooManyRequests)
+		},
+	}), ctrl.HandleCreateProfilePost)
 
 	return ctrl
 }

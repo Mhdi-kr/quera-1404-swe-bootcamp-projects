@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"example.com/authorization/pkg"
 	"github.com/Masterminds/squirrel"
 	"github.com/go-sql-driver/mysql"
+	"github.com/redis/go-redis/v9"
 )
 
 const MYSQL_KEY_EXITS uint16 = 1062
@@ -65,18 +67,20 @@ func (ur *CommentRepo) List(ctx context.Context, postID int64, size uint64, page
 		"_",
 	)
 
-	cacheGetRes, err := ur.cache.Client.Get(ctx, cacheKey).Bytes()
+	cachedBytes, err := ur.cache.Client.Get(ctx, cacheKey).Bytes()
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	err = json.Unmarshal(cacheGetRes, &comments)
-	if err != nil {
-		fmt.Println(err)
+	if !errors.Is(err, redis.Nil) {
+		// cache hit
+		err = json.Unmarshal(cachedBytes, &comments)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	if len(comments) > 0 {
-		// cache hit
 		return comments, nil
 	}
 
