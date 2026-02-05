@@ -41,9 +41,7 @@ func main() {
 }
 
 func loadConfig() (config, error) {
-	if err := godotenv.Load(".env"); err != nil {
-		return config{}, fmt.Errorf("cannot read .env from file system: %w", err)
-	}
+	godotenv.Load(".env")
 
 	dbConnectionURI, err := requireEnv("MYSQL_CONNECTION_URI")
 	if err != nil {
