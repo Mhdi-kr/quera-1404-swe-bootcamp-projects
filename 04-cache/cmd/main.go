@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -14,62 +15,108 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const defaultListenAddr = "0.0.0.0:8080"
+
+type config struct {
+	dbConnectionURI string
+	jwtSecret       string
+	redisAddress    string
+	logLevel        slog.Level
+}
+
 func main() {
-	err := godotenv.Load(".env")
+	cfg, err := loadConfig()
 	if err != nil {
-		log.Fatal("cannot read .env from file system")
+		log.Fatal(err)
 	}
 
-	dbConnectionUri := os.Getenv("MYSQL_CONNECTION_URI")
-	if len(dbConnectionUri) == 0 {
-		log.Fatal("connectionUri cannot be empty")
+	initLogger(cfg.logLevel)
+
+	ctrl, err := buildController(cfg)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if len(jwtSecret) == 0 {
-		log.Fatal("jwt secret cannot be empty")
+	ctrl.ListenAndServe(defaultListenAddr)
+}
+
+func loadConfig() (config, error) {
+	if err := godotenv.Load(".env"); err != nil {
+		return config{}, fmt.Errorf("cannot read .env from file system: %w", err)
 	}
 
-	redisAddress := os.Getenv("REDIS_ADDR")
-	if len(jwtSecret) == 0 {
-		log.Fatal("redis address cannot be empty")
+	dbConnectionURI, err := requireEnv("MYSQL_CONNECTION_URI")
+	if err != nil {
+		return config{}, err
 	}
 
-	ll := os.Getenv("LOG_LEVEL")
-	logLevel := -4
-	if len(ll) > 0 {
-		parsedLl, _ := strconv.ParseInt(ll, 10, 64)
-		logLevel = int(parsedLl)
+	jwtSecret, err := requireEnv("JWT_SECRET")
+	if err != nil {
+		return config{}, err
 	}
 
+	redisAddress, err := requireEnv("REDIS_ADDR")
+	if err != nil {
+		return config{}, err
+	}
+
+	logLevel := slog.LevelDebug
+	if ll := os.Getenv("LOG_LEVEL"); ll != "" {
+		parsedLl, err := strconv.ParseInt(ll, 10, 64)
+		if err != nil {
+			return config{}, fmt.Errorf("invalid LOG_LEVEL %q: %w", ll, err)
+		}
+		logLevel = slog.Level(parsedLl)
+	}
+
+	return config{
+		dbConnectionURI: dbConnectionURI,
+		jwtSecret:       jwtSecret,
+		redisAddress:    redisAddress,
+		logLevel:        logLevel,
+	}, nil
+}
+
+func requireEnv(key string) (string, error) {
+	value := os.Getenv(key)
+	if value == "" {
+		return "", fmt.Errorf("%s cannot be empty", key)
+	}
+
+	return value, nil
+}
+
+func initLogger(level slog.Level) {
 	log.SetFlags(log.Lshortfile)
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		AddSource: true,
-		Level:     slog.Level(logLevel),
+		Level:     level,
 	})))
 
 	slog.Debug("main", "debug", "1")
 	slog.Info("main", "info", "1")
 	slog.Error("main", "error", "1")
+}
 
-	sqldb, err := pkg.NewSQLRepository(dbConnectionUri)
+func buildController(cfg config) (controller.Controller, error) {
+	sqldb, err := pkg.NewSQLRepository(cfg.dbConnectionURI)
 	if err != nil {
-		log.Fatal("database conenction failed")
+		return controller.Controller{}, fmt.Errorf("database connection failed: %w", err)
 	}
 
-	cache := pkg.NewCache(redisAddress)
+	cache := pkg.NewCache(cfg.redisAddress)
 
 	commentRepo := repository.NewCommentRepo(sqldb, cache)
 	postRepo := repository.NewPostRepository(sqldb, cache)
 	userRepo := repository.NewUserRepository(sqldb)
 
 	analyticsSrv := service.NewAnalyticsService(cache)
-	authSrv := service.NewAuthorizationService(jwtSecret, userRepo)
+	authSrv := service.NewAuthorizationService(cfg.jwtSecret, userRepo)
 	userSrv := service.NewUserService(userRepo, authSrv)
 	postSrv := service.NewPostService(postRepo)
 	commentSrv := service.NewCommentService(commentRepo)
 
 	ctrl := controller.NewController(authSrv, userSrv, postSrv, commentSrv, analyticsSrv)
 
-	ctrl.ListenAndServe("0.0.0.0:8080")
+	return ctrl, nil
 }

@@ -8,8 +8,8 @@ import (
 
 	"example.com/authorization/internal/constants"
 	"example.com/authorization/internal/service"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
 )
 
@@ -96,11 +96,6 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 		c.Set("Version", "v1")
 		return c.Next()
 	})
-
-	// POST api/v1/posts/:postId/comments/ # create comments
-	// POST api/v1/posts/:postId/comments/:commentId/upvote # upvote comment
-	// DELETE api/v1/posts/:postId/comments/:commentId
-	// DELETE /api/v1/posts/:postId
 
 	v1profileAuthorized := v1.Group("/profile", ctrl.authorizationHandler)
 
