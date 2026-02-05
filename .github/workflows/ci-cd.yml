@@ -30,7 +30,7 @@ jobs:
         run: go test ./...
 
   build_image:
-    name: Build Image
+    name: Build Image 04-cache
     needs: test
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
@@ -51,7 +51,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: Dockerfile
+          file: ./04-cache/Dockerfile
           platforms: linux/amd64
           push: false
           cache-from: type=gha
