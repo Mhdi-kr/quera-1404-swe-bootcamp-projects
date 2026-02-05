@@ -7,3 +7,5 @@ CREATE TABLE IF NOT EXISTS `user_comment_upvote` (
     FOREIGN KEY (`comment_id`) REFERENCES `comment`(`id`) ON DELETE CASCADE,
     INDEX `idx_comment_id` (`comment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE post DROP COLUMN vote_count;

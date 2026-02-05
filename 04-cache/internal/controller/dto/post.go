@@ -26,11 +26,13 @@ type ListPostsResponse struct {
 }
 
 type Post struct {
-	Id          int        `json:"id"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	UpdatedAt   *time.Time `json:"updatedAt"`
-	URL         string     `json:"string"`
-	Description string     `json:"description"`
+	Id               int        `json:"id"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        *time.Time `json:"updatedAt"`
+	URL              string     `json:"url"`
+	Description      string     `json:"description"`
+	NumberOfComments uint64     `json:"numberOfComments"`
+	NumberOfUpvotes  uint64     `json:"numberOfUpvotes"`
 }
 
 type ProfilePostResponse struct {

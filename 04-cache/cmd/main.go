@@ -15,7 +15,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const defaultListenAddr = "0.0.0.0:8080"
+const defaultListenAddr = "0.0.0.0:3030"
 
 type config struct {
 	dbConnectionURI string
@@ -92,10 +92,6 @@ func initLogger(level slog.Level) {
 		AddSource: true,
 		Level:     level,
 	})))
-
-	slog.Debug("main", "debug", "1")
-	slog.Info("main", "info", "1")
-	slog.Error("main", "error", "1")
 }
 
 func buildController(cfg config) (controller.Controller, error) {

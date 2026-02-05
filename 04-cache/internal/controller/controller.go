@@ -35,6 +35,7 @@ func (ctrl Controller) excludedPostsAuthorizationHandler(c fiber.Ctx) error {
 	return ctrl.authorizationHandler(c)
 }
 
+// Authorization middleware
 func (ctrl Controller) authorizationHandler(c fiber.Ctx) error {
 	headers := c.GetReqHeaders()
 	authTokens, ok := headers["Authorization"]
@@ -100,8 +101,11 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 	v1profileAuthorized := v1.Group("/profile", ctrl.authorizationHandler)
 
 	ctrl.app.Get("/", ctrl.HandleHello)
+
+	// Authenticatoion
 	v1.Post("/register", ctrl.HandleRegister)
 	v1.Post("/login", ctrl.HandleLogin)
+
 	v1.Get("/users/", ctrl.HandleListUsers)
 
 	v1posts := v1.Group("/posts", ctrl.excludedPostsAuthorizationHandler)
@@ -113,6 +117,7 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 	v1posts.Delete("/:postId", ctrl.HandleDeletePost)
 
 	// TODO: fetch comments for each post when returning them
+	// TALK ABOUT: N + 1 problem
 	v1posts.Get("/", ctrl.HandleGetAllPosts)
 
 	// GET /posts/:postId
@@ -120,6 +125,7 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 	v1profileAuthorized.Get("/self", ctrl.HandleSelf)
 
 	v1profileAuthorized.Get("/posts", ctrl.HandleListProfilePosts)
+
 	v1profileAuthorized.Post("/posts", limiter.New(limiter.Config{
 		Next: func(c fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"

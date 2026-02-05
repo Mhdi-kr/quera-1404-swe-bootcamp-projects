@@ -35,13 +35,7 @@ func (ctrl Controller) HandleListProfilePosts(c fiber.Ctx) error {
 	}
 
 	for _, dp := range dps {
-		response.Posts = append(response.Posts, dto.Post{
-			Id:          int(dp.Id),
-			CreatedAt:   dp.CreatedAt,
-			UpdatedAt:   &dp.UpdatedAt,
-			URL:         dp.URL,
-			Description: dp.Description,
-		})
+		response.Posts = append(response.Posts, dp.ToDTO())
 	}
 
 	return c.JSON(response)
