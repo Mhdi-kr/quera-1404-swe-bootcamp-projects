@@ -15,6 +15,7 @@ type Config struct {
 	RedisAddr          string
 	LogLevel           slog.Level
 	CorsAllowedOrigins string
+	GrpcAddr           string
 }
 
 func LoadConfig() (Config, error) {
@@ -49,12 +50,18 @@ func LoadConfig() (Config, error) {
 		logLevel = slog.Level(parsedLl)
 	}
 
+	grpcAddr := os.Getenv("GRPC_ADDR")
+	if grpcAddr == "" {
+		grpcAddr = "0.0.0.0:4040"
+	}
+
 	return Config{
 		DBConnectionURI:    dbConnectionURI,
 		JwtSecret:          jwtSecret,
 		RedisAddr:          redisAddress,
 		LogLevel:           logLevel,
 		CorsAllowedOrigins: corsAllowedOrigins,
+		GrpcAddr:           grpcAddr,
 	}, nil
 }
 

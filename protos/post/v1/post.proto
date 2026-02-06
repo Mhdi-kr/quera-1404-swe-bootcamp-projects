@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package post.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "example.com/authorization/protos/post/v1;postv1";
+
+message ListPostsRequest {
+  uint64 page = 1;
+  uint64 size = 2;
+}
+
+message Post {
+  int64 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  google.protobuf.Timestamp updated_at = 3;
+  string url = 4;
+  string description = 5;
+  uint64 number_of_comments = 6;
+  uint64 number_of_upvotes = 7;
+}
+
+message ListPostsResponse {
+  repeated Post posts = 1;
+}
+
+service PostService {
+  rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
+}

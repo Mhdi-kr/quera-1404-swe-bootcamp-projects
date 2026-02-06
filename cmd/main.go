@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"example.com/authorization/internal/controller"
+	"example.com/authorization/internal/grpcserver"
 	"example.com/authorization/internal/repository"
 	"example.com/authorization/internal/service"
 	"example.com/authorization/pkg"
@@ -23,10 +24,16 @@ func main() {
 
 	initLogger(cfg.LogLevel)
 
-	ctrl, err := buildController(cfg)
+	ctrl, postSrv, err := buildController(cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	go func() {
+		if err := grpcserver.ListenAndServe(cfg.GrpcAddr, postSrv); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	ctrl.ListenAndServe(defaultListenAddr)
 }
@@ -39,10 +46,10 @@ func initLogger(level slog.Level) {
 	})))
 }
 
-func buildController(cfg pkg.Config) (controller.Controller, error) {
+func buildController(cfg pkg.Config) (controller.Controller, service.PostService, error) {
 	sqldb, err := pkg.NewSQLRepository(cfg.DBConnectionURI)
 	if err != nil {
-		return controller.Controller{}, fmt.Errorf("database connection failed: %w", err)
+		return controller.Controller{}, service.PostService{}, fmt.Errorf("database connection failed: %w", err)
 	}
 
 	cache := pkg.NewCache(cfg.RedisAddr)
@@ -59,5 +66,5 @@ func buildController(cfg pkg.Config) (controller.Controller, error) {
 
 	ctrl := controller.NewController(cfg, authSrv, userSrv, postSrv, commentSrv, analyticsSrv)
 
-	return ctrl, nil
+	return ctrl, postSrv, nil
 }
