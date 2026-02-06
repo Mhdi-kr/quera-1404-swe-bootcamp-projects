@@ -8,9 +8,12 @@ import (
 
 	"example.com/authorization/internal/constants"
 	"example.com/authorization/internal/service"
+	"example.com/authorization/pkg"
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/cors"
 	"github.com/gofiber/fiber/v3/middleware/limiter"
 	"github.com/gofiber/fiber/v3/middleware/logger"
+	"github.com/gofiber/fiber/v3/middleware/static"
 )
 
 type Controller struct {
@@ -67,7 +70,7 @@ func (ctrl Controller) authorizationHandler(c fiber.Ctx) error {
 	return c.Next()
 }
 
-func NewController(authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService, commentSrv service.CommentService, analyticsSrv service.AnalyticsService) Controller {
+func NewController(cfg pkg.Config, authSrv service.AuthService, userSrv service.UserService, postSrv service.PostService, commentSrv service.CommentService, analyticsSrv service.AnalyticsService) Controller {
 	app := fiber.New()
 
 	ctrl := Controller{
@@ -81,6 +84,11 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 
 	app.Use(logger.New(logger.Config{
 		Format: logger.JSONFormat,
+	}))
+
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: []string{cfg.CorsAllowedOrigins},
+		AllowHeaders: []string{"Origin", "Content-Type", "Accept"},
 	}))
 
 	app.All("/*", func(c fiber.Ctx) error {
@@ -101,6 +109,8 @@ func NewController(authSrv service.AuthService, userSrv service.UserService, pos
 	v1profileAuthorized := v1.Group("/profile", ctrl.authorizationHandler)
 
 	ctrl.app.Get("/", ctrl.HandleHello)
+
+	app.Get("/web", static.New("../public/index.html"))
 
 	// Authenticatoion
 	v1.Post("/register", ctrl.HandleRegister)

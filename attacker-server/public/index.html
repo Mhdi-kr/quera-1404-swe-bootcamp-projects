@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('postsComponent', () => ({
+                posts: [],
+                loading: true,
+                error: null,
+
+                async init() {
+                    try {
+                        const res = await fetch('http://localhost:3030/api/v1/posts')
+                        if (!res.ok) throw new Error('Failed to fetch posts')
+
+                        const data = await res.json()
+                        this.posts = data.posts
+                    } catch (e) {
+                        this.error = e.message
+                    } finally {
+                        this.loading = false
+                    }
+                }
+            }))
+        })
+    </script>
+</head>
+
+<body class="bg-gray-50 p-6" style="background-color: burlywood;">
+    <div x-data="postsComponent" class="max-w-2xl mx-auto space-y-4">
+        <p x-show="loading" class="text-gray-500">
+            Loading posts…
+        </p>
+
+        <p x-show="error" class="text-red-500" x-text="error"></p>
+
+        <template x-for="post in posts" :key="post.id">
+            <div class="border border-gray-200 p-4 rounded-lg bg-white">
+                <a
+                    :href="post.url"
+                    target="_blank"
+                    class="font-semibold text-blue-600 hover:underline break-all"
+                    x-text="post.url"
+                ></a>
+
+                <p class="text-gray-700 mt-2" x-text="post.description"></p>
+
+                <div class="text-sm text-gray-500 mt-2">
+                    <span x-text="post.numberOfUpvotes"></span> upvotes ·
+                    <span x-text="post.numberOfComments"></span> comments
+                </div>
+            </div>
+        </template>
+    </div>
+</body>
+</html>
