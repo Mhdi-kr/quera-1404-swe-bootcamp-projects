@@ -26,5 +26,6 @@ message ListPostsResponse {
 }
 
 service PostService {
+  // this method lists posts using ListPostsRequest and returns hackernews like posts
   rpc ListPosts(ListPostsRequest) returns (ListPostsResponse);
 }

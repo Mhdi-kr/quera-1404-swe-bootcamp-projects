@@ -26,6 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostServiceClient interface {
+	// this method lists posts using ListPostsRequest and returns hackernews like posts
 	ListPosts(ctx context.Context, in *ListPostsRequest, opts ...grpc.CallOption) (*ListPostsResponse, error)
 }
 
@@ -51,6 +52,7 @@ func (c *postServiceClient) ListPosts(ctx context.Context, in *ListPostsRequest,
 // All implementations must embed UnimplementedPostServiceServer
 // for forward compatibility.
 type PostServiceServer interface {
+	// this method lists posts using ListPostsRequest and returns hackernews like posts
 	ListPosts(context.Context, *ListPostsRequest) (*ListPostsResponse, error)
 	mustEmbedUnimplementedPostServiceServer()
 }
