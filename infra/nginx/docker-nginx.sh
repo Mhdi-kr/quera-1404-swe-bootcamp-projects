@@ -1,0 +1,1 @@
+docker run -p 3001:80 --name some-nginx -v /Users/meti/personal/quera-1404-swe-bootcamp-projects/infra/nginx/public:/usr/share/nginx/html:ro -d nginx
